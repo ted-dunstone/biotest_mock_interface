@@ -1,13 +1,12 @@
 # Mock Biometric Test Server
 
-This is a mock biometric API server designed for use in biometric Proof-of-Concept (PoC) environments, such as the Brisbane Airport evaluation. It simulates biometric **enrolment**, **identification**, and **gallery management**, exposing a simple REST API with interactive Swagger documentation.
+This is a mock biometric API server designed for use in biometric Proof-of-Concept (PoC) environments. It simulates biometric **enrolment**, **identification**, and **gallery management**, exposing a simple REST API with interactive Swagger documentation.
 
 ## Features
 
-- REST API for **/enroll**, **/identify**, and **/clear**
+- Just 3 REST API's for **/enroll**, **/identify**, and **/clear**
 - Input: Base64-encoded images
 - Output: Simulated template IDs and match scores
-- In-memory gallery (no persistent storage)
 - Swagger UI for interactive API testing
 - Processing time (in milliseconds) included in every response
 
@@ -17,6 +16,8 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 
 - Python 3.8+
 - pip
+- supply your own face image (in the client currently its face1.jpeg)
+
 
 ### Install dependencies
 
@@ -119,6 +120,8 @@ Clears the in-memory biometric gallery.
 ## Testing the API
 
 A sample client (`mock_client.py`) can be created to automate image uploads and interaction with the server. You can also use Swagger UI or tools like Postman.
+
+In practice this will be used to enroll and test various galleries.
 
 ---
 
