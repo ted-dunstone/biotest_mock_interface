@@ -12,7 +12,7 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 - Processing time (in milliseconds) included in every response
 
 > [!IMPORTANT]  
-> Note this currently will only be run inside trusted networks and so there is currently no encryption or authentication on REST call.
+> Note this currently only designed be run completely inside a secure trusted testing network, and so there is currently no encryption or authentication on REST calls.
 
 ---
 
