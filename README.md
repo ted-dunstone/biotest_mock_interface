@@ -74,6 +74,13 @@ Enrolls a biometric template from a Base64-encoded image.
 }
 ```
 
+#### Error Response:
+e.g.
+```json
+{
+   "error": "FTE: Unable to decode image"
+}
+```
 ---
 
 ### 🔹 `POST /identify`
@@ -100,6 +107,13 @@ Performs identification against the enrolled gallery.
 }
 ```
 
+#### Error Response:
+e.g.
+```json
+{
+   "error": "FTA: Unable to decode image"
+}
+```
 ---
 
 ### 🔹 `POST /clear`
