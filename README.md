@@ -179,7 +179,7 @@ In practice this will be used to enroll and test various galleries.
 
 ## Notes
 
-* This is a **simulation only**. No actual biometric algorithms are used.
+* This is a **mock application only** for integration testing. No actual biometric algorithms are used in this repo.
 * The `TEMPLATE_DB` is stored in memory and cleared on restart or via `/clear`.
 * Intended for PoC and testing integrations in secure environments (e.g. behind VPN).
 
