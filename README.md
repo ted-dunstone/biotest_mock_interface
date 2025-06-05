@@ -138,6 +138,33 @@ Clears the in-memory biometric gallery.
 
 ---
 
+---
+
+## 🔍 Passive PAD (Presentation Attack Detection)
+
+### 🔹 `POST /pad`
+
+Simulates a passive PAD check to determine whether a biometric image represents a live person or a spoof (e.g. printed photo or screen replay).
+
+#### Request Body:
+```json
+{
+  "image": "<base64-encoded-image>"
+}
+```
+
+#### Response:
+```json
+{
+  "is_live": true,
+  "reason": "Face structure consistent with live subject",
+  "processing_time_ms": 3
+}
+```
+Response includes a human-readable explanation and processing time.
+
+Intended for testing integration and fallback logic in client applications.
+
 ## Testing the API
 
 A sample client (`mock_client.py`) can be created to automate image uploads and interaction with the server. You can also use Swagger UI or tools like Postman.

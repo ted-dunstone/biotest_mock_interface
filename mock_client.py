@@ -47,6 +47,20 @@ def clear():
 
     print("✅ Clear success:", result)
 
+def test_pad(image_path):
+    image_b64 = encode_image(image_path)
+    response = requests.post(f"{SERVER_URL}/pad", json={"image": image_b64})
+
+    assert response.status_code == 200, f"PAD failed with status {response.status_code}"
+    result = response.json()
+
+    assert "is_live" in result, "PAD response missing 'is_live'"
+    assert isinstance(result["is_live"], bool), "'is_live' must be a boolean"
+    assert "reason" in result, "PAD response missing 'reason'"
+    assert isinstance(result["reason"], str), "'reason' must be a string"
+    assert "processing_time_ms" in result, "PAD response missing 'processing_time_ms'"
+
+    print("✅ PAD check success:", result)
 
 if __name__ == "__main__":
     img_path = "face1.png"
@@ -71,4 +85,6 @@ if __name__ == "__main__":
     matches = identify(img_path, top_k=10)
     assert len(matches) == 2, "Expected 2 matches after re-enrolling"
 
+    print("\n🧪 Testing PAD on enrolled image...")
+    test_pad(img_path)
     print("\n✅ All tests passed successfully.")
