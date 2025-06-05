@@ -5,7 +5,7 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 ## Features
 
 - REST API for **/enroll**, **/identify**, and **/clear**
-- Input: Base64-encoded images
+- Input: Base64-encoded images (optional top_k for identify)
 - Output: Simulated template IDs and match scores
 - In-memory gallery (no persistent storage)
 - Swagger UI for interactive API testing
@@ -78,6 +78,13 @@ Enrolls a biometric template from a Base64-encoded image.
 ### 🔹 `POST /identify`
 
 Performs identification against the enrolled gallery.
+
+(optional top_k:
+
+* type: integer
+* minimum: 1, maximum: 100
+* default: 100
+* description: Number of top matches to return (max 100)))
 
 #### Request Body:
 
