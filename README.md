@@ -4,11 +4,15 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 
 ## Features
 
-- Just 3 REST API's for **/enroll**, **/identify**, and **/clear**
+- Just 3 manidtory REST API's for **/enroll**, **/identify**, and **/clear** for accuracy
+- One optional API **/pad** for testing pad
 - Input: Base64-encoded images
 - Output: Simulated template IDs and match scores
 - Swagger UI for interactive API testing
 - Processing time (in milliseconds) included in every response
+
+> [!IMPORTANT]  
+> Note this currently will only be run inside trusted networks and so there is currently no encryption or authentication on REST call.
 
 ---
 
