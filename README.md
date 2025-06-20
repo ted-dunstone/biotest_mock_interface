@@ -4,12 +4,10 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 
 ## Features
 
-- Just 3 manidtory REST API's for **/enroll**, **/identify**, and **/clear** for accuracy
-- One optional API **/pad** for testing pad
+- REST API endpoints: **GET /info**, **POST /enroll**, **POST /identify**, **POST /verify**, **POST /clear**, **POST /pad**
 - Input: Base64-encoded images
-- Output: Simulated template IDs and match scores
-- Swagger UI for interactive API testing
-- Processing time (in milliseconds) included in every response
+- Output: simulated template IDs, match scores, liveness decisions, and processing time (ms)
+- Interactive Swagger UI (if `flasgger` is installed) at `/apidocs/`
 
 > [!IMPORTANT]  
 > Note this currently only designed be run completely inside a secure trusted testing network, and so there is currently no encryption or authentication on REST calls.
@@ -20,14 +18,18 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 
 - Python 3.8+
 - pip
-- supply your own face image (in the client currently its face1.jpeg)
+- supply your own face image (default `face1.png`)
 
 
 ### Install dependencies
 
 ```bash
-pip install flask flasgger
-````
+# Core dependencies
+pip install flask
+
+# Optional Swagger UI (interactive docs)
+pip install flasgger
+```
 
 ---
 
@@ -36,22 +38,15 @@ pip install flask flasgger
 ```bash
 python mock_server.py
 ```
-
-The server will start on:
-
-```
-http://localhost:5001
-```
-
----
-
-## Swagger UI
-
-Interactive API documentation and testing is available at:
+The server will start on `http://localhost:5001`. If the optional `flasgger` package is installed,
+interactive API documentation is available at:
 
 ```
 http://localhost:5001/apidocs/
 ```
+
+---
+
 
 ---
 
@@ -89,20 +84,14 @@ e.g.
 
 ### 🔹 `POST /identify`
 
-Performs identification against the enrolled gallery.
-
-(optional top_k:
-
-* type: integer
-* minimum: 1, maximum: 100
-* default: 100
-* description: Number of top matches to return (max 100)))
+Identify enrolled templates matching the provided image.
 
 #### Request Body:
 
 ```json
 {
-  "image": "<base64-encoded-image>"
+  "image": "<base64-encoded-image>",
+  "top_k": 50            # Optional: number of top matches to return (1–100, default=100)
 }
 ```
 
@@ -142,6 +131,55 @@ Clears the in-memory biometric gallery.
 
 ---
 
+### 🔹 `GET /info`
+
+Get information about the tested algorithm.
+
+#### Success Response:
+
+```json
+{
+  "company": "BixeLab",
+  "product_name": "Mock Biometric Test Server",
+  "version": "1.0.0",
+  "thresholds": { "identify": 0.5, "verify": 0.75 },
+  "description": "A mock biometric API for PoC and testing, no real biometric algorithm used."
+}
+```
+
+---
+
+### 🔹 `POST /verify`
+
+Verify two biometric images (one-to-one).
+
+#### Request Body:
+
+```json
+{
+  "image1": "<base64-encoded-image>",
+  "image2": "<base64-encoded-image>"
+}
+```
+
+#### Success Response:
+
+```json
+{
+  "score": 0.8321,
+  "decision": true,
+  "processing_time_ms": 4
+}
+```
+
+#### Error Response:
+
+```json
+{
+  "error": "FTE: Missing or invalid image input",
+  "processing_time_ms": 2
+}
+```
 ---
 
 ## 🔍 Passive PAD (Presentation Attack Detection)
@@ -171,15 +209,15 @@ Intended for testing integration and fallback logic in client applications.
 
 ## Testing the API
 
-A sample client (`mock_client.py`) can be created to automate image uploads and interaction with the server. You can also use Swagger UI or tools like Postman.
+A sample client (`mock_client.py`) is provided to show how interaction with the server work. You can also use Swagger UI or tools like Postman.
 
-In practice this will be used to enroll and test various galleries.
+In practice this will can be used to test the interfaces of your server.
 
 ---
 
 > [!NOTE] 
 > * This is a **mock application only** for integration testing. No actual biometric algorithms are used in this repo.
-> * The `TEMPLATE_DB` is stored in memory and cleared on restart or via `/clear`.
+> * The `TEMPLATE_DB` for the mock is stored in memory and cleared on restart or via `/clear`.
 > * Intended for PoC and testing integrations in secure environments (e.g. behind VPN).
 
 ---

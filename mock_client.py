@@ -62,29 +62,85 @@ def test_pad(image_path):
 
     print("✅ PAD check success:", result)
 
+def info():
+    response = requests.get(f"{SERVER_URL}/info")
+    assert response.status_code == 200, f"Info failed with status {response.status_code}"
+    result = response.json()
+    assert "company" in result, "Info response missing 'company'"
+    assert "product_name" in result, "Info response missing 'product_name'"
+    assert "version" in result, "Info response missing 'version'"
+    assert "thresholds" in result, "Info response missing 'thresholds'"
+    assert isinstance(result["thresholds"], dict), "'thresholds' should be a dict"
+    assert "description" in result, "Info response missing 'description'"
+    print("✅ Info success:", result)
+    return result
+
+def verify(image1_path, image2_path):
+    img1_b64 = encode_image(image1_path)
+    img2_b64 = encode_image(image2_path)
+    payload = {"image1": img1_b64, "image2": img2_b64}
+    response = requests.post(f"{SERVER_URL}/verify", json=payload)
+
+    assert response.status_code == 200, f"Verify failed with status {response.status_code}"
+    result = response.json()
+    assert "score" in result, "Verify response missing 'score'"
+    assert isinstance(result["score"], (int, float)), "'score' should be a number"
+    assert "processing_time_ms" in result, "Verify response missing 'processing_time_ms'"
+    assert isinstance(result["processing_time_ms"], (int, float)), "'processing_time_ms' should be a number"
+    assert "decision" in result, "Verify response missing 'decision'"
+    assert isinstance(result["decision"], bool), "'decision' should be a boolean"
+    print("✅ Verify success:", result)
+    return result
+
 if __name__ == "__main__":
     img_path = "face1.png"
 
-    print("\n🔄 Clear gallery...")
+    # Test info endpoint
+    print("\nℹ️ Testing /info endpoint...")
+    info()
+
+    # Ensure gallery is empty
+    print("\n🔄 Clearing gallery...")
     clear()
 
-    print("\n🧪 Enrolling 5 images...")
-    ids = [enroll(img_path) for _ in range(5)]
-
-    print("\n🧪 Identifying with top_k=3...")
-    matches = identify(img_path, top_k=3)
-    assert len(matches) <= 3, "Returned more matches than expected"
-
-    print("\n🧪 Clearing gallery and testing identification on empty gallery...")
-    clear()
+    # Test identify on empty gallery
+    print("\n🔎 Testing /identify on empty gallery...")
     matches = identify(img_path, top_k=5)
-    assert len(matches) == 0, "Expected zero matches after clearing"
+    assert len(matches) == 0, f"Expected 0 matches on empty gallery, got {len(matches)}"
 
-    print("\n🧪 Re-enroll 2 images and test identify...")
-    ids = [enroll(img_path) for _ in range(2)]
-    matches = identify(img_path, top_k=10)
-    assert len(matches) == 2, "Expected 2 matches after re-enrolling"
+    # Enroll multiple templates
+    N = 5
+    print(f"\n📝 Enrolling {N} images...")
+    ids = [enroll(img_path) for _ in range(N)]
+    assert len(ids) == N, f"Enroll returned {len(ids)} IDs, expected {N}"
 
-    print("\n🧪 Testing PAD on enrolled image...")
+    # Test identify with top_k smaller than gallery size
+    top_k = 3
+    print(f"\n🔎 Testing /identify with top_k={top_k}...")
+    matches = identify(img_path, top_k=top_k)
+    assert len(matches) == top_k, f"Expected {top_k} matches, got {len(matches)}"
+
+    # Test identify with top_k larger than gallery size
+    top_k_large = N + 2
+    print(f"\n🔎 Testing /identify with top_k={top_k_large} (larger than gallery)...")
+    matches = identify(img_path, top_k=top_k_large)
+    assert len(matches) == N, f"Expected {N} matches, got {len(matches)}"
+
+    # Test gallery of one
+    print("\n🔄 Clearing gallery for single-item test...")
+    clear()
+    print("\n📝 Enrolling 1 image...")
+    one_id = enroll(img_path)
+    print("\n🔎 Testing /identify for gallery of one...")
+    matches = identify(img_path)
+    assert len(matches) == 1, f"Expected 1 match for gallery of one, got {len(matches)}"
+
+    # Test verify endpoint
+    print("\n🧪 Testing /verify endpoint with same image pair...")
+    verify(img_path, img_path)
+
+    # Test PAD endpoint
+    print("\n🎃 Testing /pad endpoint...")
     test_pad(img_path)
-    print("\n✅ All tests passed successfully.")
+
+    print("\n✅ All endpoint tests passed successfully.")
