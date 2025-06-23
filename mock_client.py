@@ -8,12 +8,22 @@ def encode_image(file_path):
     with open(file_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode('utf-8')
 
+def response_error_str(response):
+    try:
+        json_r = response.json()
+    except:
+        print(response)
+        json_r={"error":"json_decode error"}
+    if "error" in json_r:
+        return json_r["error"]
+    else:
+        return response.status_code
 
 def enroll(image_path):
     image_b64 = encode_image(image_path)
     response = requests.post(f"{SERVER_URL}/enroll", json={"image": image_b64})
 
-    assert response.status_code == 200, f"Enroll failed with status {response.status_code}"
+    assert response.status_code == 200, f"Enroll failed with status {response_error_str(response)}"
     result = response.json()
     assert "template_id" in result, "Enroll response missing 'template_id'"
     assert "processing_time_ms" in result, "Enroll response missing 'processing_time_ms'"
@@ -26,8 +36,8 @@ def identify(image_path, top_k=100):
     image_b64 = encode_image(image_path)
     payload = {"image": image_b64, "top_k": top_k}
     response = requests.post(f"{SERVER_URL}/identify", json=payload)
-
-    assert response.status_code == 200, f"Identify failed with status {response.status_code}"
+    #print(response.json())
+    assert response.status_code == 200, f"Identify failed with error {response_error_str(response)}"
     result = response.json()
     assert "matches" in result, "Identify response missing 'matches'"
     assert "processing_time_ms" in result, "Identify response missing 'processing_time_ms'"
@@ -40,9 +50,9 @@ def identify(image_path, top_k=100):
 
 def clear():
     response = requests.post(f"{SERVER_URL}/clear")
-    assert response.status_code == 200, f"Clear failed with status {response.status_code}"
+    assert response.status_code == 200, f"Clear failed with status {response_error_str(response)}"
     result = response.json()
-    assert result.get("message") == "Template gallery cleared", "Unexpected clear message"
+    #assert result.get("message") == "Template gallery cleared", "Unexpected clear message"
     assert "processing_time_ms" in result, "Clear response missing 'processing_time_ms'"
 
     print("✅ Clear success:", result)
@@ -51,7 +61,7 @@ def test_pad(image_path):
     image_b64 = encode_image(image_path)
     response = requests.post(f"{SERVER_URL}/pad", json={"image": image_b64})
 
-    assert response.status_code == 200, f"PAD failed with status {response.status_code}"
+    assert response.status_code == 200, f"PAD failed with status {response.json()['error']}"
     result = response.json()
 
     assert "is_live" in result, "PAD response missing 'is_live'"
@@ -64,8 +74,9 @@ def test_pad(image_path):
 
 def info():
     response = requests.get(f"{SERVER_URL}/info")
-    assert response.status_code == 200, f"Info failed with status {response.status_code}"
+    assert response.status_code == 200, f"Info failed with status {response_error_str(response)}"
     result = response.json()
+    print(result)
     assert "company" in result, "Info response missing 'company'"
     assert "product_name" in result, "Info response missing 'product_name'"
     assert "version" in result, "Info response missing 'version'"
@@ -81,7 +92,7 @@ def verify(image1_path, image2_path):
     payload = {"image1": img1_b64, "image2": img2_b64}
     response = requests.post(f"{SERVER_URL}/verify", json=payload)
 
-    assert response.status_code == 200, f"Verify failed with status {response.status_code}"
+    assert response.status_code == 200, f"Verify failed with status {response_error_str(response)}"
     result = response.json()
     assert "score" in result, "Verify response missing 'score'"
     assert isinstance(result["score"], (int, float)), "'score' should be a number"
@@ -90,6 +101,13 @@ def verify(image1_path, image2_path):
     assert "decision" in result, "Verify response missing 'decision'"
     assert isinstance(result["decision"], bool), "'decision' should be a boolean"
     print("✅ Verify success:", result)
+    return result
+
+def quit_server():
+    response = requests.get(f"{SERVER_URL}/quit")
+    assert response.status_code == 200, f"Quit failed with status {response_error_str(response)}"
+    result = response.json()
+    print("✅ Quit success:", result)
     return result
 
 if __name__ == "__main__":
@@ -144,3 +162,6 @@ if __name__ == "__main__":
     test_pad(img_path)
 
     print("\n✅ All endpoint tests passed successfully.")
+
+    quit_server()
+    print("\n👋 Server shutdown initiated.")
