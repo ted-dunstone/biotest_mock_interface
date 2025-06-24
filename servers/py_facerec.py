@@ -24,6 +24,18 @@ known_face_encodings = []
 known_face_ids = []
 DEFAULT_TOLERANCE = 0.6
 
+API_KEY = 'this_is_a_secret_key'  # Replace with your actual API key
+
+def require_api_key(f):
+    """Decorator to require API key for endpoints."""
+    def decorated_function(*args, **kwargs):
+        api_key = request.headers.get('X-API-Key')
+        if api_key != API_KEY:
+            return jsonify({'error': 'Unauthorized'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 def decode_base64_image(base64_string):
     """Decode base64 string to image array for face_recognition."""
     try:
@@ -40,6 +52,7 @@ def decode_base64_image(base64_string):
     except Exception as e:
         print(f"ERROR decoding base64 image: {str(e)}")
         return None
+
 
 def get_face_encoding_from_base64(base64_string):
     """Get face encoding from base64 image string."""
@@ -58,6 +71,7 @@ def get_face_encoding_from_base64(base64_string):
         return None
 
 @app.route('/verify', methods=['POST'])
+@require_api_key
 def verify():
     start_time = time.time()
     
@@ -95,6 +109,7 @@ def verify():
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
 @app.route('/identify', methods=['POST'])
+@require_api_key
 def identify():
     start_time = time.time()
     data = request.json or {}
@@ -139,6 +154,7 @@ def identify():
     })
 
 @app.route('/enroll', methods=['POST'])
+@require_api_key
 def enroll():
     start_time = time.time()
     data = request.json or {}
@@ -165,6 +181,7 @@ def enroll():
     })
 
 @app.route('/clear', methods=['POST'])
+@require_api_key
 def clear():
     start_time = time.time()
     known_face_encodings.clear()
@@ -189,6 +206,7 @@ def info():
             'identification': DEFAULT_TOLERANCE
         },
         'gallery_size': len(known_face_encodings),
+        'api_key_required': True,
         'end_points': {
             'verify': '/verify',
             'identify': '/identify',
@@ -200,6 +218,7 @@ def info():
     })
 
 @app.route('/quit', methods=['GET'])
+@require_api_key
 def quit_server():
     """Endpoint to gracefully shut down the server."""
     import os

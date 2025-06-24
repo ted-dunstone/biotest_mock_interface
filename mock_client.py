@@ -6,6 +6,8 @@ SERVER_URL = f"http://localhost:{PORT}"
 
 TEST_IMAGE_PATH = "testdata/face1.png"
 
+api_key = "this_is_a_secret_key"
+
 end_points = {
             'verify': '/verify',
             'identify': '/identify',
@@ -32,12 +34,20 @@ def response_error_str(response):
     else:
         return response.status_code
 
+def set_api_key(api_key):
+    api_key = api_key.strip()
+
+def headers():
+    return {
+        'X-API-Key': api_key
+    }
+
 def enroll(image_path):
     if 'enroll' not in end_points:
         print("⚠️ Warning: 'enroll' endpoint not defined in end_points")
         return None
     image_b64 = encode_image(image_path)
-    response = requests.post(f"{SERVER_URL}/{end_points['enroll']}", json={"image": image_b64})
+    response = requests.post(f"{SERVER_URL}/{end_points['enroll']}", json={"image": image_b64}, headers=headers())
 
     assert response.status_code == 200, f"Enroll failed with status {response_error_str(response)}"
     result = response.json()
@@ -54,7 +64,7 @@ def identify(image_path, top_k=100):
         return []
     image_b64 = encode_image(image_path)
     payload = {"image": image_b64, "top_k": top_k}
-    response = requests.post(f"{SERVER_URL}/{end_points['identify']}", json=payload)
+    response = requests.post(f"{SERVER_URL}/{end_points['identify']}", json=payload, headers=headers())
     assert response.status_code == 200, f"Identify failed with error {response_error_str(response)}"
     result = response.json()
     assert "matches" in result, "Identify response missing 'matches'"
@@ -70,7 +80,7 @@ def clear():
     if 'clear' not in end_points:
         print("⚠️ Warning: 'clear' endpoint not defined in end_points")
         return
-    response = requests.post(f"{SERVER_URL}/{end_points['clear']}")
+    response = requests.post(f"{SERVER_URL}/{end_points['clear']}",headers=headers())
     assert response.status_code == 200, f"Clear failed with status {response_error_str(response)}"
     result = response.json()
     #assert result.get("message") == "Template gallery cleared", "Unexpected clear message"
@@ -83,7 +93,7 @@ def test_pad(image_path):
         print("⚠️ Warning: 'pad' endpoint not defined in end_points")
         return
     image_b64 = encode_image(image_path)
-    response = requests.post(f"{SERVER_URL}/pad", json={"image": image_b64})
+    response = requests.post(f"{SERVER_URL}/pad", json={"image": image_b64},headers=headers())
 
     assert response.status_code == 200, f"PAD failed with status {response.json()['error']}"
     result = response.json()

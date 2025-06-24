@@ -13,7 +13,8 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 - Interactive Swagger UI (if `flasgger` is installed) at `/apidocs/`
 
 > [!IMPORTANT]
-> * The implementation provided is in Python, however any language can be used where the RERST endpoints can exposed.
+> * The implementation provided is in Python, however any language can be used where the REST endpoints can exposed.
+> * API authentication can be support through x-API-Key set in the header
 > * Note this currently only designed be run completely inside a secure trusted testing network, and so there is currently no encryption or authentication on REST calls.
 
 ---
@@ -131,6 +132,7 @@ Get information about the tested algorithm and discover supported endpoints. Thi
   "version": "1.0.0",
   "thresholds": { "identify": 0.5, "verify": 0.75 },
   "description": "A mock biometric API for PoC and testing, no real biometric algorithm used.",
+  "api_key_required": false, # specify if an api key is needed - if so it will be sent in the header
   "endpoints": {
     "info": "/info",
     "enroll": "/enroll",
@@ -345,6 +347,17 @@ known_encodings = []
 known_ids = []
 DEFAULT_TOLERANCE = 0.6
 
+API_KEY = 'this_is_a_secret_key'  # Replace with your actual API key
+
+def require_api_key(f):
+    """Decorator to require API key for endpoints."""
+    def decorated_function(*args, **kwargs):
+        api_key = request.headers.get('X-API-Key')
+        if api_key != API_KEY:
+            return jsonify({'error': 'Unauthorized'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
 def decode_image(b64):
     image = Image.open(io.BytesIO(base64.b64decode(b64)))
     if image.mode != 'RGB':
@@ -352,6 +365,7 @@ def decode_image(b64):
     return np.array(image)
 
 @app.route('/verify', methods=['POST'])
+@require_api_key
 def verify():
     start = time.time()
     data = request.json or {}
@@ -369,6 +383,7 @@ def verify():
     })
 
 @app.route('/identify', methods=['POST'])
+@require_api_key
 def identify():
     start = time.time()
     data = request.json or {}
@@ -384,6 +399,7 @@ def identify():
     })
     
 @app.route('/enroll', methods=['POST'])
+@require_api_key
 def enroll():
     start = time.time()
     data = request.json or {}
