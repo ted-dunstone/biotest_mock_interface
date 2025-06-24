@@ -4,7 +4,10 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 
 ## Features
 
-- REST API endpoints: **GET /info**, **POST /enroll**, **POST /identify**, **POST /verify**, **POST /clear**, **POST /pad**
+- REST API endpoints: **GET /info**, **POST /enroll**, **POST /identify**, **POST /verify**, **POST /clear**, **POST /pad**, **GET /quit**
+
+- **/info** is the only manditory endpoint - all others depend on what is required to be tested.
+
 - Input: Base64-encoded images
 - Output: simulated template IDs, match scores, liveness decisions, and processing time (ms)
 - Interactive Swagger UI (if `flasgger` is installed) at `/apidocs/`
