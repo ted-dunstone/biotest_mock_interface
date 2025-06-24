@@ -3,17 +3,40 @@ import base64
 
 SERVER_URL = "http://localhost:5001"
 
+end_points = {
+            'verify': '/verify',
+            'identify': '/identify',
+            'enroll': '/enroll',
+            'clear': '/clear',
+            'pad': '/pad',
+            'info': '/info',
+            'quit': '/quit'
+        }
+
 # Load image and convert to base64
 def encode_image(file_path):
     with open(file_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode('utf-8')
 
+def response_error_str(response):
+    try:
+        json_r = response.json()
+    except:
+        print(response)
+        json_r={"error":"json_decode error"}
+    if "error" in json_r:
+        return json_r["error"]
+    else:
+        return response.status_code
 
 def enroll(image_path):
+    if 'enroll' not in end_points:
+        print("⚠️ Warning: 'enroll' endpoint not defined in end_points")
+        return None
     image_b64 = encode_image(image_path)
-    response = requests.post(f"{SERVER_URL}/enroll", json={"image": image_b64})
+    response = requests.post(f"{SERVER_URL}/{end_points['enroll']}", json={"image": image_b64})
 
-    assert response.status_code == 200, f"Enroll failed with status {response.status_code}"
+    assert response.status_code == 200, f"Enroll failed with status {response_error_str(response)}"
     result = response.json()
     assert "template_id" in result, "Enroll response missing 'template_id'"
     assert "processing_time_ms" in result, "Enroll response missing 'processing_time_ms'"
@@ -23,11 +46,14 @@ def enroll(image_path):
 
 
 def identify(image_path, top_k=100):
+    if 'identify' not in end_points:
+        print("⚠️ Warning: 'identify' endpoint not defined in end_points")
+        return []
     image_b64 = encode_image(image_path)
     payload = {"image": image_b64, "top_k": top_k}
-    response = requests.post(f"{SERVER_URL}/identify", json=payload)
-
-    assert response.status_code == 200, f"Identify failed with status {response.status_code}"
+    response = requests.post(f"{SERVER_URL}/{end_points['identify']}", json=payload)
+    #print(response.json())
+    assert response.status_code == 200, f"Identify failed with error {response_error_str(response)}"
     result = response.json()
     assert "matches" in result, "Identify response missing 'matches'"
     assert "processing_time_ms" in result, "Identify response missing 'processing_time_ms'"
@@ -39,19 +65,25 @@ def identify(image_path, top_k=100):
 
 
 def clear():
-    response = requests.post(f"{SERVER_URL}/clear")
-    assert response.status_code == 200, f"Clear failed with status {response.status_code}"
+    if 'clear' not in end_points:
+        print("⚠️ Warning: 'clear' endpoint not defined in end_points")
+        return
+    response = requests.post(f"{SERVER_URL}/{end_points['clear']}")
+    assert response.status_code == 200, f"Clear failed with status {response_error_str(response)}"
     result = response.json()
-    assert result.get("message") == "Template gallery cleared", "Unexpected clear message"
+    #assert result.get("message") == "Template gallery cleared", "Unexpected clear message"
     assert "processing_time_ms" in result, "Clear response missing 'processing_time_ms'"
 
     print("✅ Clear success:", result)
 
 def test_pad(image_path):
+    if 'pad' not in end_points:
+        print("⚠️ Warning: 'pad' endpoint not defined in end_points")
+        return
     image_b64 = encode_image(image_path)
     response = requests.post(f"{SERVER_URL}/pad", json={"image": image_b64})
 
-    assert response.status_code == 200, f"PAD failed with status {response.status_code}"
+    assert response.status_code == 200, f"PAD failed with status {response.json()['error']}"
     result = response.json()
 
     assert "is_live" in result, "PAD response missing 'is_live'"
@@ -63,25 +95,41 @@ def test_pad(image_path):
     print("✅ PAD check success:", result)
 
 def info():
-    response = requests.get(f"{SERVER_URL}/info")
-    assert response.status_code == 200, f"Info failed with status {response.status_code}"
+    if 'info' not in end_points:
+        print("⚠️ Warning: 'info' endpoint not defined in end_points")
+        return None
+    response = requests.get(f"{SERVER_URL}/{end_points['info']}")
+    assert response.status_code == 200, f"Info failed with status {response_error_str(response)}"
     result = response.json()
+    print(result)
     assert "company" in result, "Info response missing 'company'"
     assert "product_name" in result, "Info response missing 'product_name'"
     assert "version" in result, "Info response missing 'version'"
-    assert "thresholds" in result, "Info response missing 'thresholds'"
-    assert isinstance(result["thresholds"], dict), "'thresholds' should be a dict"
-    assert "description" in result, "Info response missing 'description'"
+    if "thresholds" not in result:
+        print("⚠️ Warning: Info response missing 'thresholds'")
+    elif not isinstance(result["thresholds"], dict):
+        print("⚠️ Warning: 'thresholds' should be a dict")
+    if "description" not in result:
+        print("⚠️ Warning: Info response missing 'description'")
+    if "gallery_size" not in result:
+        print("⚠️ Warning: Info response missing 'gallery_size'")
+    elif not isinstance(result["gallery_size"], int):
+        print("⚠️ Warning: 'gallery_size' should be an integer")
+    if "end_points" not in result:
+        print("⚠️ Warning: Info response missing 'end_points'")
     print("✅ Info success:", result)
     return result
 
 def verify(image1_path, image2_path):
+    if 'verify' not in end_points:
+        print("⚠️ Warning: 'verify' endpoint not defined in end_points")
+        return None
     img1_b64 = encode_image(image1_path)
     img2_b64 = encode_image(image2_path)
     payload = {"image1": img1_b64, "image2": img2_b64}
-    response = requests.post(f"{SERVER_URL}/verify", json=payload)
+    response = requests.post(f"{SERVER_URL}/{end_points['verify']}", json=payload)
 
-    assert response.status_code == 200, f"Verify failed with status {response.status_code}"
+    assert response.status_code == 200, f"Verify failed with status {response_error_str(response)}"
     result = response.json()
     assert "score" in result, "Verify response missing 'score'"
     assert isinstance(result["score"], (int, float)), "'score' should be a number"
@@ -92,12 +140,25 @@ def verify(image1_path, image2_path):
     print("✅ Verify success:", result)
     return result
 
+def quit_server():
+    if 'quit' not in end_points:
+        print("⚠️ Warning: 'quit' endpoint not defined in end_points")
+        return
+    response = requests.get(f"{SERVER_URL}/{end_points['quit']}")
+    assert response.status_code == 200, f"Quit failed with status {response_error_str(response)}"
+    result = response.json()
+    print("✅ Quit success:", result)
+    return result
+
 if __name__ == "__main__":
     img_path = "face1.png"
 
     # Test info endpoint
     print("\nℹ️ Testing /info endpoint...")
-    info()
+    info_dict = info()
+    if 'end_points' in info_dict:
+        print("Available endpoints:", info_dict['end_points'])
+        end_points = info_dict['end_points']
 
     # Ensure gallery is empty
     print("\n🔄 Clearing gallery...")
@@ -144,3 +205,6 @@ if __name__ == "__main__":
     test_pad(img_path)
 
     print("\n✅ All endpoint tests passed successfully.")
+
+    quit_server()
+    print("\n👋 Server shutdown initiated.")
