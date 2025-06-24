@@ -22,7 +22,7 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 
 - Python 3.8+
 - pip
-- supply your own face image (default `face1.png`)
+- supply your own biometric image (default `testdata/face1.png`)
 
 
 ### Install dependencies
@@ -63,6 +63,55 @@ http://localhost:5001/apidocs/
 python mock_client.py
 ```
 The client will run a range of tests on the server at `http://localhost:5001`.
+
+An example output is below:
+
+```bash
+python3 mock_client.py
+
+ℹ️ Testing /info endpoint...
+✅ Info success: {'company': 'Open Source python face_recognition', 'description': 'A simple API for face recognition operations.', 'end_points': {'clear': '/clear', 'enroll': '/enroll', 'identify': '/identify', 'info': '/info', 'quit': '/quit', 'verify': '/verify'}, 'gallery_size': 0, 'product_name': ' face_recognition', 'thresholds': {'identification': 0.6, 'verification': 0.6}, 'version': '1.2.3'}
+Available endpoints: {'clear': '/clear', 'enroll': '/enroll', 'identify': '/identify', 'info': '/info', 'quit': '/quit', 'verify': '/verify'}
+
+🔄 Clearing gallery...
+✅ Clear success: {'message': 'Template gallery cleared', 'processing_time_ms': 0}
+
+🔎 Testing /identify on empty gallery...
+✅ Identify success: 0 match(es)
+
+📝 Enrolling 5 images...
+✅ Enroll success: {'processing_time_ms': 845, 'template_id': '55acef9c-083b-4e02-adfa-25e4695de4c4'}
+✅ Enroll success: {'processing_time_ms': 815, 'template_id': 'a44dd4bf-aee9-4e7f-9123-0a62869cf377'}
+✅ Enroll success: {'processing_time_ms': 809, 'template_id': '5ef6422b-7a36-4b40-aba9-c3531baad50f'}
+✅ Enroll success: {'processing_time_ms': 817, 'template_id': 'affd1580-47d1-4b1f-9c59-8f9069393335'}
+✅ Enroll success: {'processing_time_ms': 815, 'template_id': 'cde2dac9-f1b5-4009-8f4b-25216472d7c9'}
+
+🔎 Testing /identify with top_k=3...
+✅ Identify success: 3 match(es)
+
+🔎 Testing /identify with top_k=7 (larger than gallery)...
+✅ Identify success: 5 match(es)
+
+🔄 Clearing gallery for single-item test...
+✅ Clear success: {'message': 'Template gallery cleared', 'processing_time_ms': 0}
+
+📝 Enrolling 1 image...
+✅ Enroll success: {'processing_time_ms': 815, 'template_id': '8252f00f-36de-45bb-9d15-4c35e445d890'}
+
+🔎 Testing /identify for gallery of one...
+✅ Identify success: 1 match(es)
+
+🧪 Testing /verify endpoint with same image pair...
+✅ Verify success: {'decision': True, 'processing_time_ms': 1635, 'score': 1.0}
+
+🎃 Testing /pad endpoint...
+⚠️ Warning: 'pad' endpoint not defined in end_points
+
+✅ All endpoint tests passed successfully.
+✅ Quit success: {'message': 'Server is shutting down...'}
+
+👋 Server shutdown initiated
+```
 
 ---
 
