@@ -1,7 +1,8 @@
 import requests
 import base64
 
-SERVER_URL = "http://localhost:5001"
+PORT = 5001
+SERVER_URL = f"http://localhost:{PORT}"
 
 end_points = {
             'verify': '/verify',
@@ -154,7 +155,12 @@ if __name__ == "__main__":
 
     # Test info endpoint
     print("\nℹ️ Testing /info endpoint...")
-    info_dict = info()
+    try:
+        info_dict = info()
+    except Exception as e:
+        print(f"❌ Error connection to /info test: {e}")
+        print(f"\n👋 Server can't be found at {SERVER_URL}")
+        exit(1)
     if 'end_points' in info_dict:
         print("Available endpoints:", info_dict['end_points'])
         end_points = info_dict['end_points']

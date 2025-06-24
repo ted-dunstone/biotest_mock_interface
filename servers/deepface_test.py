@@ -369,7 +369,7 @@ def pad():
                 'is_live': bool(is_live),
                 'confidence': float(confidence),
                 'processing_time_ms': processing_time,
-                'note': 'This is a basic implementation. For production use, consider specialized PAD models.'
+                'reason': 'This is a basic implementation. For production use, consider specialized PAD models.'
             })
             
         except Exception as e:
