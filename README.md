@@ -63,7 +63,17 @@ http://localhost:5001/apidocs/
 ```bash
 python mock_client.py
 ```
-The client will run a range of tests on the server at `http://localhost:5001`.
+The client will run a range of tests on the server defined in config.yaml
+
+```yaml
+default:
+  name: "Default Configuration"
+  url: "http://127.0.0.1:5001"
+  api_key: this_is_a_secret_key
+  test_image_path: testdata/face1.png
+  gallery: testdata/gallery
+  probes: testdata/probes
+```
 
 An example output is below:
 
