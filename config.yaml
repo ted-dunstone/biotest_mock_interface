@@ -1,0 +1,8 @@
+default:
+  name: "Default Configuration"
+  url: "http://127.0.0.1:5001"
+  description: "This is the default configuration for the server."
+  api_key: this_is_a_secret_key
+  test_image_path: testdata/face1.png
+  gallery: testdata/gallery
+  probes: testdata/probes

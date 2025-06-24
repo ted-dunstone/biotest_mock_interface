@@ -1,12 +1,16 @@
 import requests
 import base64
+import yaml
 
-PORT = 5001
-SERVER_URL = f"http://localhost:{PORT}"
+config = yaml.safe_load(open("config.yaml", "r"))
 
-TEST_IMAGE_PATH = "testdata/face1.png"
+config_name = "default"
 
-api_key = "this_is_a_secret_key"
+# Read from default config
+SERVER_URL = config[config_name]["url"]
+api_key = config[config_name]["api_key"]
+TEST_IMAGE_PATH = config[config_name]["test_image_path"]
+
 
 end_points = {
             'verify': '/verify',
