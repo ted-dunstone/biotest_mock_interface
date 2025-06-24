@@ -14,12 +14,15 @@ import base64
 import uuid
 import random
 import time
+import functools  
+
 
 # Algorithm information for /info endpoint
 ALGO_INFO = {
     "company": "BixeLab",
     "product_name": "Mock Biometric Test Server",
     "version": "1.0.0",
+    "api_key_required": True,
     # Optional thresholds for decision points
     "thresholds": {
         "identify": 0.5,
@@ -29,6 +32,19 @@ ALGO_INFO = {
     "description": "A mock biometric API for PoC and testing, no real biometric algorithm used."
 }
 
+
+API_KEY = 'this_is_a_secret_key'  # Replace with your actual API key
+
+def require_api_key(f):
+    """Decorator to require API key for endpoints."""
+    @functools.wraps(f)
+    def decorated_function(*args, **kwargs):
+        api_key = request.headers.get('X-API-Key')
+        if api_key != API_KEY:
+            return jsonify({'error': 'Unauthorized'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
 app = Flask(__name__)
 if Swagger:
     Swagger(app)
@@ -36,6 +52,7 @@ if Swagger:
 TEMPLATE_DB = {}
 
 @app.route('/enroll', methods=['POST'])
+@require_api_key
 def enroll():
     """
     Enroll a biometric image.
@@ -108,6 +125,7 @@ def enroll():
 
 
 @app.route('/identify', methods=['POST'])
+@require_api_key
 def identify():
     """
     Identify a biometric subject.
@@ -201,6 +219,7 @@ def identify():
 
 
 @app.route('/clear', methods=['POST'])
+@require_api_key
 def clear_gallery():
     """
     Clear the template gallery.
@@ -227,6 +246,7 @@ def clear_gallery():
         "processing_time_ms": int((time.time() - start_time) * 1000)
     })
 @app.route('/pad', methods=['POST'])
+@require_api_key
 def pad():
     """
     Presentation Attack Detection (PAD).
@@ -332,6 +352,7 @@ def info():
     return jsonify(ALGO_INFO)
 
 @app.route('/verify', methods=['POST'])
+@require_api_key
 def verify():
     """
     Verify two biometric images (one-to-one).
@@ -418,6 +439,7 @@ def verify():
     return jsonify(result)
 
 @app.route('/quit', methods=['GET'])
+@require_api_key
 def quit_server():
     """Endpoint to gracefully shut down the server."""
     import os
