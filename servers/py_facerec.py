@@ -17,8 +17,11 @@ import time
 import base64
 import io
 from PIL import Image
+import functools  
+
 
 app = Flask(__name__)
+
 
 known_face_encodings = []
 known_face_ids = []
@@ -28,6 +31,7 @@ API_KEY = 'this_is_a_secret_key'  # Replace with your actual API key
 
 def require_api_key(f):
     """Decorator to require API key for endpoints."""
+    @functools.wraps(f)
     def decorated_function(*args, **kwargs):
         api_key = request.headers.get('X-API-Key')
         if api_key != API_KEY:
