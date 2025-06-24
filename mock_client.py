@@ -139,7 +139,7 @@ def verify(image1_path, image2_path):
     img1_b64 = encode_image(image1_path)
     img2_b64 = encode_image(image2_path)
     payload = {"image1": img1_b64, "image2": img2_b64}
-    response = requests.post(f"{SERVER_URL}/{end_points['verify']}", json=payload)
+    response = requests.post(f"{SERVER_URL}/{end_points['verify']}", json=payload, headers=headers())
 
     assert response.status_code == 200, f"Verify failed with status {response_error_str(response)}"
     result = response.json()
@@ -156,7 +156,7 @@ def quit_server():
     if 'quit' not in end_points:
         print("⚠️ Warning: 'quit' endpoint not defined in end_points")
         return
-    response = requests.get(f"{SERVER_URL}/{end_points['quit']}")
+    response = requests.get(f"{SERVER_URL}/{end_points['quit']}",headers=headers())
     assert response.status_code == 200, f"Quit failed with status {response_error_str(response)}"
     result = response.json()
     print("✅ Quit success:", result)
