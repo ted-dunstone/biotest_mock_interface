@@ -1,8 +1,6 @@
 # Mock Biometric Test Server
 
-This is a mock biometric API server designed for use in biometric Proof-of-Concept (PoC) environments. It simulates biometric **enrolment**, **identification**, and **gallery management**, exposing a simple REST API with interactive Swagger documentation.
-
-Note the implementation provided is in Python, however any language can be used where the RERST endpoints can exposed.
+This is a mock biometric API server designed for use in biometric Proof-of-Concept (PoC) environments. It simulates biometric **enrolment**, **identification**, and **gallery management**, exposing a simple REST API with interactive Swagger documentation. 
 
 ## Features
 
@@ -11,8 +9,9 @@ Note the implementation provided is in Python, however any language can be used 
 - Output: simulated template IDs, match scores, liveness decisions, and processing time (ms)
 - Interactive Swagger UI (if `flasgger` is installed) at `/apidocs/`
 
-> [!IMPORTANT]  
-> Note this currently only designed be run completely inside a secure trusted testing network, and so there is currently no encryption or authentication on REST calls.
+> [!IMPORTANT]
+> * The implementation provided is in Python, however any language can be used where the RERST endpoints can exposed.
+> * Note this currently only designed be run completely inside a secure trusted testing network, and so there is currently no encryption or authentication on REST calls.
 
 ---
 
