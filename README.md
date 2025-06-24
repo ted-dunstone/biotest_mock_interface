@@ -53,6 +53,12 @@ http://localhost:5001/apidocs/
 
 ---
 
+## Running the Client
+
+```bash
+python mock_client.py
+```
+The client will run a range of tests on the server at `http://localhost:5001`.
 
 ---
 
