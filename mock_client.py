@@ -4,6 +4,8 @@ import base64
 PORT = 5001
 SERVER_URL = f"http://localhost:{PORT}"
 
+TEST_IMAGE_PATH = "testdata/face1.png"
+
 end_points = {
             'verify': '/verify',
             'identify': '/identify',
@@ -151,7 +153,7 @@ def quit_server():
     return result
 
 if __name__ == "__main__":
-    img_path = "face1.png"
+    img_path = TEST_IMAGE_PATH
 
     # Test info endpoint
     print("\nℹ️ Testing /info endpoint...")
