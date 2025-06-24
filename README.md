@@ -2,6 +2,8 @@
 
 This is a mock biometric API server designed for use in biometric Proof-of-Concept (PoC) environments. It simulates biometric **enrolment**, **identification**, and **gallery management**, exposing a simple REST API with interactive Swagger documentation.
 
+Note the implementation provided is in Python, however any language can be used where the RERST endpoints can exposed.
+
 ## Features
 
 - REST API endpoints: **GET /info**, **POST /enroll**, **POST /identify**, **POST /verify**, **POST /clear**, **POST /pad**
