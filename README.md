@@ -29,6 +29,12 @@ pip install flask
 
 # Optional Swagger UI (interactive docs)
 pip install flasgger
+
+# Mock client for integration tests
+pip install requests
+
+# Face Recognition server (in 'servers' directory)
+pip install face_recognition numpy Pillow
 ```
 
 ---
@@ -86,12 +92,14 @@ e.g.
 
 Identify enrolled templates matching the provided image.
 
+> **Note:** `/identify` returns matches only for templates previously enrolled via `/enroll`. Ensure you call `/enroll` first to populate the template gallery.
+
 #### Request Body:
 
 ```json
 {
   "image": "<base64-encoded-image>",
-  "top_k": 50            # Optional: number of top matches to return (1–100, default=100)
+  "top_k": 50            # Number of top matches to return (1–100, default=100)
 }
 ```
 
@@ -100,9 +108,13 @@ Identify enrolled templates matching the provided image.
 ```json
 {
   "matches": [
-    {"template_id": "uuid-1", "score": 0.982},
+    {"template_id": "uuid-1",
+     "score": 0.982, 
+      "decision": true      # Optional: indicates whether the match passes the identification threshold
+    },
     ...
   ],
+ 
   "processing_time_ms": 5
 }
 ```
@@ -118,7 +130,7 @@ e.g.
 
 ### 🔹 `POST /clear`
 
-Clears the in-memory biometric gallery.
+Clears the biometric gallery.
 
 #### Success Response:
 
@@ -133,7 +145,7 @@ Clears the in-memory biometric gallery.
 
 ### 🔹 `GET /info`
 
-Get information about the tested algorithm.
+Get information about the tested algorithm and discover supported endpoints. This endpoint is **mandatory** for all servers. Servers may implement additional endpoints beyond those listed; clients should inspect `/info` to determine available functionality.
 
 #### Success Response:
 
@@ -143,7 +155,16 @@ Get information about the tested algorithm.
   "product_name": "Mock Biometric Test Server",
   "version": "1.0.0",
   "thresholds": { "identify": 0.5, "verify": 0.75 },
-  "description": "A mock biometric API for PoC and testing, no real biometric algorithm used."
+  "description": "A mock biometric API for PoC and testing, no real biometric algorithm used.",
+  "endpoints": {
+    "info": "/info",
+    "enroll": "/enroll",
+    "identify": "/identify",
+    "verify": "/verify",
+    "clear": "/clear",
+    "pad": "/pad",
+    "quit": "/quit"
+  }
 }
 ```
 
@@ -152,6 +173,8 @@ Get information about the tested algorithm.
 ### 🔹 `POST /verify`
 
 Verify two biometric images (one-to-one).
+
+> **Note:** the `decision` field in the success response is optional and may be omitted by the server.
 
 #### Request Body:
 
@@ -207,18 +230,131 @@ Response includes a human-readable explanation and processing time.
 
 Intended for testing integration and fallback logic in client applications.
 
+---
+
+### 🔹 `GET /quit`
+
+Gracefully shut down the server. No request body is required.
+
+#### Success Response:
+
+```json
+{
+  "message": "Server is shutting down..."
+}
+```
+Clients can invoke this endpoint to terminate the server process.
+
 ## Testing the API
 
 A sample client (`mock_client.py`) is provided to show how interaction with the server work. You can also use Swagger UI or tools like Postman.
 
-In practice this will can be used to test the interfaces of your server.
+In practice this can be used to test the interfaces of your server.
 
 ---
 
 > [!NOTE] 
-> * This is a **mock application only** for integration testing. No actual biometric algorithms are used in this repo.
+> * This is a **mock application only** for integration testing. 
 > * The `TEMPLATE_DB` for the mock is stored in memory and cleared on restart or via `/clear`.
 > * Intended for PoC and testing integrations in secure environments (e.g. behind VPN).
+
+---
+
+## Automated Server Testing
+
+A test runner (`test_servers.py`) is provided to start each Python server in the `servers/` directory and run the integration suite (`mock_client.py`) against it:
+
+```bash
+python test_servers.py
+```
+
+## Face Recognition Server Example
+
+The `servers/py_facerec.py` script demonstrates an open source face recognition implementation. Below is a minimal snippet illustrating the `/verify`, `/identify`, and `/enroll` endpoints:
+
+```python
+from flask import Flask, request, jsonify
+import time, base64, io, uuid
+import face_recognition
+from PIL import Image
+import numpy as np
+
+app = Flask(__name__)
+known_encodings = []
+known_ids = []
+DEFAULT_TOLERANCE = 0.6
+
+def decode_image(b64):
+    image = Image.open(io.BytesIO(base64.b64decode(b64)))
+    if image.mode != 'RGB':
+        image = image.convert('RGB')
+    return np.array(image)
+
+@app.route('/verify', methods=['POST'])
+def verify():
+    start = time.time()
+    data = request.json or {}
+    img1 = decode_image(data['image1'])
+    img2 = decode_image(data['image2'])
+    enc1 = face_recognition.face_encodings(img1)[0]
+    enc2 = face_recognition.face_encodings(img2)[0]
+    dist = face_recognition.face_distance([enc1], enc2)[0]
+    score = round(1.0 - dist, 4)
+    decision = dist <= DEFAULT_TOLERANCE
+    return jsonify({
+        'score': score,
+        'decision': decision,
+        'processing_time_ms': int((time.time() - start)*1000)
+    })
+
+@app.route('/identify', methods=['POST'])
+def identify():
+    start = time.time()
+    data = request.json or {}
+    target = face_recognition.face_encodings(decode_image(data['image']))[0]
+    distances = face_recognition.face_distance(known_encodings, target)
+    matches = sorted([
+        {'template_id': tid, 'score': round(1.0 - d, 4)}
+        for tid, d in zip(known_ids, distances)
+    ], key=lambda x: x['score'], reverse=True)[:data.get('top_k', 100)]
+    return jsonify({
+        'matches': matches,
+        'processing_time_ms': int((time.time() - start)*1000)
+    })
+    
+@app.route('/enroll', methods=['POST'])
+def enroll():
+    start = time.time()
+    data = request.json or {}
+    image = decode_image(data['image'])
+    encoding = face_recognition.face_encodings(image)[0]
+    template_id = str(uuid.uuid4())
+    known_encodings.append(encoding)
+    known_ids.append(template_id)
+    return jsonify({
+        'template_id': template_id,
+        'processing_time_ms': int((time.time() - start)*1000)
+    })
+
+@app.route('/info', methods=['GET'])
+def info():
+    return jsonify({
+        'company': 'Face Recognition Inc.',
+        'product_name': 'Face Recognition API',
+        'version': '1.0.0',
+        'description': 'A simple API for face recognition operations.',
+        'thresholds': {
+            'identify': DEFAULT_TOLERANCE,
+            'verify': DEFAULT_TOLERANCE
+        },
+        'endpoints': {
+            'info': '/info',
+            'enroll': '/enroll',
+            'identify': '/identify',
+            'verify': '/verify'
+        }
+    })
+```
 
 ---
 
