@@ -117,6 +117,34 @@ Available endpoints: {'clear': '/clear', 'enroll': '/enroll', 'identify': '/iden
 
 ## API Endpoints
 
+
+### 🔹 `GET /info`
+
+Get information about the tested algorithm and discover supported endpoints. This endpoint is **mandatory** for all servers. Servers may implement additional endpoints beyond those listed; clients should inspect `/info` to determine available functionality.
+
+#### Success Response:
+
+```json
+{
+  "company": "BixeLab",
+  "product_name": "Mock Biometric Test Server",
+  "version": "1.0.0",
+  "thresholds": { "identify": 0.5, "verify": 0.75 },
+  "description": "A mock biometric API for PoC and testing, no real biometric algorithm used.",
+  "endpoints": {
+    "info": "/info",
+    "enroll": "/enroll",
+    "identify": "/identify",
+    "verify": "/verify",
+    "clear": "/clear",
+    "pad": "/pad",
+    "quit": "/quit"
+  }
+}
+```
+
+---
+
 ### 🔹 `POST /enroll`
 
 Enrolls a biometric template from a Base64-encoded image.
@@ -200,32 +228,6 @@ Clears the biometric gallery.
 }
 ```
 
----
-
-### 🔹 `GET /info`
-
-Get information about the tested algorithm and discover supported endpoints. This endpoint is **mandatory** for all servers. Servers may implement additional endpoints beyond those listed; clients should inspect `/info` to determine available functionality.
-
-#### Success Response:
-
-```json
-{
-  "company": "BixeLab",
-  "product_name": "Mock Biometric Test Server",
-  "version": "1.0.0",
-  "thresholds": { "identify": 0.5, "verify": 0.75 },
-  "description": "A mock biometric API for PoC and testing, no real biometric algorithm used.",
-  "endpoints": {
-    "info": "/info",
-    "enroll": "/enroll",
-    "identify": "/identify",
-    "verify": "/verify",
-    "clear": "/clear",
-    "pad": "/pad",
-    "quit": "/quit"
-  }
-}
-```
 
 ---
 
