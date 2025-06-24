@@ -51,7 +51,11 @@ def identify(image_path, top_k=100):
         return []
     image_b64 = encode_image(image_path)
     payload = {"image": image_b64, "top_k": top_k}
+<<<<<<< HEAD
     response = requests.post(f"{SERVER_URL}/{end_points['identify']}", json=payload)
+=======
+    response = requests.post(f"{SERVER_URL}/identify", json=payload)
+>>>>>>> 532a7ce21673013a86f74e0f82634ad82549ceda
     #print(response.json())
     assert response.status_code == 200, f"Identify failed with error {response_error_str(response)}"
     result = response.json()
@@ -65,10 +69,14 @@ def identify(image_path, top_k=100):
 
 
 def clear():
+<<<<<<< HEAD
     if 'clear' not in end_points:
         print("⚠️ Warning: 'clear' endpoint not defined in end_points")
         return
     response = requests.post(f"{SERVER_URL}/{end_points['clear']}")
+=======
+    response = requests.post(f"{SERVER_URL}/clear")
+>>>>>>> 532a7ce21673013a86f74e0f82634ad82549ceda
     assert response.status_code == 200, f"Clear failed with status {response_error_str(response)}"
     result = response.json()
     #assert result.get("message") == "Template gallery cleared", "Unexpected clear message"
@@ -95,10 +103,14 @@ def test_pad(image_path):
     print("✅ PAD check success:", result)
 
 def info():
+<<<<<<< HEAD
     if 'info' not in end_points:
         print("⚠️ Warning: 'info' endpoint not defined in end_points")
         return None
     response = requests.get(f"{SERVER_URL}/{end_points['info']}")
+=======
+    response = requests.get(f"{SERVER_URL}/info")
+>>>>>>> 532a7ce21673013a86f74e0f82634ad82549ceda
     assert response.status_code == 200, f"Info failed with status {response_error_str(response)}"
     result = response.json()
     print(result)
@@ -141,10 +153,14 @@ def verify(image1_path, image2_path):
     return result
 
 def quit_server():
+<<<<<<< HEAD
     if 'quit' not in end_points:
         print("⚠️ Warning: 'quit' endpoint not defined in end_points")
         return
     response = requests.get(f"{SERVER_URL}/{end_points['quit']}")
+=======
+    response = requests.get(f"{SERVER_URL}/quit")
+>>>>>>> 532a7ce21673013a86f74e0f82634ad82549ceda
     assert response.status_code == 200, f"Quit failed with status {response_error_str(response)}"
     result = response.json()
     print("✅ Quit success:", result)
