@@ -123,8 +123,27 @@ Available endpoints: {'clear': '/clear', 'enroll': '/enroll', 'identify': '/iden
 
 👋 Server shutdown initiated
 ```
-
 ---
+
+## Example of Identify Calls
+
+```mermaid
+sequenceDiagram
+    participant Config as config.yaml
+    participant Client as mock_client
+    participant Server as mock_server
+
+    Config->>Client: Load configuration
+    Client->>Server: REST_API /info
+    Server-->>Client: Info response
+    Client->>Server: REST_API /clear
+    Client->>Server: REST_API /enroll (for each biometric in gallery)
+    Server-->>Client: Returns template_id(s)
+    Client->>Server: REST_API /identify 
+    Server-->>Client: Returns scores
+```
+---
+
 
 ## API Endpoints
 
