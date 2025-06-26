@@ -159,7 +159,7 @@ Get information about the tested algorithm and discover supported endpoints. Thi
   "company": "BixeLab",
   "product_name": "Mock Biometric Test Server",
   "version": "1.0.0",
-  "thresholds": { "identify": 0.5, "verify": 0.75 },
+  "thresholds": { "identify": 0.5, "verify": 0.75 }, # note this is optional, values supplied here will be assumed as suggested operational points
   "description": "A mock biometric API for PoC and testing, no real biometric algorithm used.",
   "api_key_required": false, # specify if an api key is needed - if so it will be sent in the header
   "endpoints": {
