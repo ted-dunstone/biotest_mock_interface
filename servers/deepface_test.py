@@ -22,13 +22,78 @@ import shutil
 from PIL import Image
 import cv2
 
+
+# DeepFaceHandler class encapsulates DeepFace configuration and calls
+class DeepFaceHandler:
+    def __init__(self, model_name="ArcFace", detector_backend="opencv", distance_metric="cosine"):
+        self.model_name = model_name
+        self.detector_backend = detector_backend
+        self.distance_metric = distance_metric
+        self.default_threshold = 0.68
+
+    def get_deepface_threshold(self):
+        """Get the appropriate threshold for the current model and distance metric."""
+        thresholds = {
+            'VGG-Face': {'cosine': 0.68, 'euclidean': 0.60, 'euclidean_l2': 0.86},
+            'Facenet': {'cosine': 0.40, 'euclidean': 10, 'euclidean_l2': 0.80},
+            'OpenFace': {'cosine': 0.10, 'euclidean': 0.55, 'euclidean_l2': 0.55},
+            'DeepFace': {'cosine': 0.23, 'euclidean': 64, 'euclidean_l2': 0.64},
+            'DeepID': {'cosine': 0.015, 'euclidean': 45, 'euclidean_l2': 0.17},
+            'ArcFace': {'cosine': 0.68, 'euclidean': 4.15, 'euclidean_l2': 1.13},
+            'Dlib': {'cosine': 0.07, 'euclidean': 0.6, 'euclidean_l2': 0.6},
+            'SFace': {'cosine': 0.593, 'euclidean': 10.734, 'euclidean_l2': 1.055}
+        }
+        return thresholds.get(self.model_name, {}).get(self.distance_metric, self.default_threshold)
+
+    def verify(self, img1_path, img2_path, enforce_detection=True):
+        return DeepFace.verify(
+            img1_path=img1_path,
+            img2_path=img2_path,
+            model_name=self.model_name,
+            detector_backend=self.detector_backend,
+            distance_metric=self.distance_metric,
+            enforce_detection=enforce_detection
+        )
+
+    def represent(self, img_path, enforce_detection=True):
+        return DeepFace.represent(
+            img_path=img_path,
+            model_name=self.model_name,
+            detector_backend=self.detector_backend,
+            enforce_detection=enforce_detection
+        )
+
+    def extract_faces(self, img_path, enforce_detection=True, anti_spoofing=False):
+        #print(help(DeepFace.extract_faces))  # Debugging line to show available parameters
+        return DeepFace.extract_faces(
+            img_path=img_path,
+            detector_backend=self.detector_backend,
+            enforce_detection=enforce_detection,
+            anti_spoofing=anti_spoofing
+        )
+
+    def find(self, img_path, db_path, top_k=100, enforce_detection=False):
+        # Returns a pandas DataFrame of matches
+        return DeepFace.find(
+            img_path=img_path,
+            db_path=db_path,
+            model_name=self.model_name,
+            detector_backend=self.detector_backend,
+            distance_metric=self.distance_metric,
+            enforce_detection=enforce_detection,
+            silent=True,
+            # top_k supported in some DeepFace versions, fallback handled below
+            #top_k=top_k
+        )
+
 app = Flask(__name__)
 
-# Configuration
-MODEL_NAME = "ArcFace"  # Options: VGG-Face, Facenet, OpenFace, DeepFace, DeepID, ArcFace, Dlib, SFace
-DETECTOR_BACKEND = "opencv"  # Options: opencv, ssd, dlib, mtcnn, retinaface, mediapipe
-DISTANCE_METRIC = "cosine"  # Options: cosine, euclidean, euclidean_l2
-DEFAULT_THRESHOLD = 0.68  # VGG-Face threshold for cosine distance
+# Instantiate DeepFaceHandler with desired settings
+deepface_handler = DeepFaceHandler(
+    model_name="ArcFace",  # Change to desired model
+    detector_backend="opencv",
+    distance_metric="cosine"
+)
 
 # Gallery storage
 gallery_dir = None
@@ -79,21 +144,6 @@ def safe_remove_file(filepath):
     except Exception as e:
         print(f"Warning: Could not remove temporary file {filepath}: {str(e)}")
 
-def get_deepface_threshold():
-    """Get the appropriate threshold for the current model and distance metric."""
-    # DeepFace thresholds for different models and metrics
-    thresholds = {
-        'VGG-Face': {'cosine': 0.68, 'euclidean': 0.60, 'euclidean_l2': 0.86},
-        'Facenet': {'cosine': 0.40, 'euclidean': 10, 'euclidean_l2': 0.80},
-        'OpenFace': {'cosine': 0.10, 'euclidean': 0.55, 'euclidean_l2': 0.55},
-        'DeepFace': {'cosine': 0.23, 'euclidean': 64, 'euclidean_l2': 0.64},
-        'DeepID': {'cosine': 0.015, 'euclidean': 45, 'euclidean_l2': 0.17},
-        'ArcFace': {'cosine': 0.68, 'euclidean': 4.15, 'euclidean_l2': 1.13},
-        'Dlib': {'cosine': 0.07, 'euclidean': 0.6, 'euclidean_l2': 0.6},
-        'SFace': {'cosine': 0.593, 'euclidean': 10.734, 'euclidean_l2': 1.055}
-    }
-    
-    return thresholds.get(MODEL_NAME, {}).get(DISTANCE_METRIC, DEFAULT_THRESHOLD)
 
 @app.route('/verify', methods=['POST'])
 def verify():
@@ -103,46 +153,45 @@ def verify():
     
     try:
         data = request.json or {}
-        
+
         if 'image1' not in data or 'image2' not in data:
             return jsonify({'error': 'Missing image1 or image2 in request'}), 400
-        
+
         print(f"DEBUG: Received image1 length: {len(data['image1']) if data['image1'] else 0}")
         print(f"DEBUG: Received image2 length: {len(data['image2']) if data['image2'] else 0}")
-        
+
         # Decode images to temporary files
         img1_path = decode_base64_image(data['image1'])
         img2_path = decode_base64_image(data['image2'])
-        
+
         if img1_path is None:
             return jsonify({'error': 'Failed to decode image1'}), 400
         if img2_path is None:
             return jsonify({'error': 'Failed to decode image2'}), 400
-        
-        # Perform verification using DeepFace
-        result = DeepFace.verify(
+
+        # Perform verification using DeepFaceHandler
+        result = deepface_handler.verify(
             img1_path=img1_path,
             img2_path=img2_path,
-            model_name=MODEL_NAME,
-            detector_backend=DETECTOR_BACKEND,
-            distance_metric=DISTANCE_METRIC,
             enforce_detection=True
         )
-        
+
         # Extract results
         distance = result['distance']
         threshold = result['threshold']
         decision = result['verified']
-        
+
         # Convert distance to similarity score (1 - normalized distance)
-        if DISTANCE_METRIC == 'cosine':
+        if deepface_handler.distance_metric == 'cosine':
             score = 1.0 - distance
         else:
             # For euclidean distances, normalize by threshold
-            score = max(0.0, 1.0 - (distance / threshold))
-        
+            #score = max(0.0, 1.0 - (distance / threshold))
+            score = distance
+
+
         processing_time = int((time.time() - start_time) * 1000)
-        
+
         return jsonify({
             'score': float(score),
             'decision': bool(decision),
@@ -150,11 +199,11 @@ def verify():
             'distance': float(distance),
             'threshold': float(threshold)
         })
-        
+
     except Exception as e:
         print(f"ERROR in verify: {str(e)}")
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
-    
+
     finally:
         # Clean up temporary files
         safe_remove_file(img1_path)
@@ -167,77 +216,81 @@ def identify():
     
     try:
         data = request.json or {}
-        
+
         if 'image' not in data:
             return jsonify({'error': 'Missing image in request'}), 400
-        
+
         top_k = data.get('top_k', 100)
-        
+
         # If gallery is empty, return empty matches
-        if len(known_face_ids) == 0:
+        if len(known_face_ids) == 0 or gallery_dir is None:
             return jsonify({
-                "matches": [], 
+                "matches": [],
                 "processing_time_ms": int((time.time() - start_time) * 1000)
             })
-        
+
         # Decode query image
         query_img_path = decode_base64_image(data['image'])
         if query_img_path is None:
             return jsonify({'error': 'Failed to decode image'}), 400
-        
-        # Perform identification using DeepFace
-        matches = []
-        threshold = get_deepface_threshold()
-        
-        for i, (face_id, face_path) in enumerate(zip(known_face_ids, known_face_paths)):
-            try:
-                result = DeepFace.verify(
-                    img1_path=query_img_path,
-                    img2_path=face_path,
-                    model_name=MODEL_NAME,
-                    detector_backend=DETECTOR_BACKEND,
-                    distance_metric=DISTANCE_METRIC,
-                    enforce_detection=False  # Don't enforce detection to avoid failures
-                )
-                
-                distance = result['distance']
-                
-                # Convert distance to similarity score
-                if DISTANCE_METRIC == 'cosine':
-                    score = 1.0 - distance
-                else:
-                    score = max(0.0, 1.0 - (distance / threshold))
-                
-                matches.append({
-                    'template_id': face_id,
-                    'score': float(score),
-                    'distance': float(distance)
-                })
-                
-            except Exception as e:
-                print(f"Error comparing with template {face_id}: {str(e)}")
-                # Add with very low score for failed comparisons
-                matches.append({
-                    'template_id': face_id,
-                    'score': 0.0,
-                    'distance': float('inf')
-                })
-        
-        # Sort by score (highest first) and limit to top_k
-        matches.sort(key=lambda x: x['score'], reverse=True)
-        matches = matches[:top_k]
-        
+
+        # Use DeepFaceHandler.find for identification
+        try:
+            df_list = deepface_handler.find(
+                img_path=query_img_path,
+                db_path=gallery_dir,
+                top_k=top_k,
+                enforce_detection=False
+            )
+            # DeepFace.find returns a list of DataFrames (one for each model, but we use only one)
+            if isinstance(df_list, list):
+                df = df_list[0] if df_list else None
+            else:
+                df = df_list
+            matches = []
+            if df is not None and hasattr(df, "iterrows"):
+                # The identity is the filename (path) of the match, so we map back to template_id
+                for _, row in df.iterrows():
+                    face_path = row.get("identity") or row.get("Identity") or row.get("img_path")
+                    # Map face_path to template_id
+                    template_id = None
+                    for tid, path in zip(known_face_ids, known_face_paths):
+                        if os.path.abspath(face_path) == os.path.abspath(path):
+                            template_id = tid
+                            break
+                    # If not found, use filename without extension as fallback
+                    if template_id is None and face_path:
+                        template_id = os.path.splitext(os.path.basename(face_path))[0]
+                    # Distance and score
+                    distance = row.get("distance", row.get("Distance", 0.0))
+                    threshold = deepface_handler.get_deepface_threshold()
+                    if deepface_handler.distance_metric == 'cosine':
+                        score = 1.0 - distance
+                    else:
+                        score = max(0.0, 1.0 - (distance / threshold))
+                    matches.append({
+                        'template_id': template_id,
+                        'score': float(score),
+                        'distance': float(distance)
+                    })
+            # Sort by score (highest first) and limit to top_k
+            matches.sort(key=lambda x: x['score'], reverse=True)
+            matches = matches[:top_k]
+        except Exception as e:
+            print(f"ERROR in DeepFaceHandler.find: {str(e)}")
+            matches = []
+
         processing_time = int((time.time() - start_time) * 1000)
-        
+
         return jsonify({
             'matches': matches,
             'processing_time_ms': processing_time
         })
-        
+
     except Exception as e:
         print(f"ERROR in identify: {str(e)}")
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
-    
+
     finally:
         # Clean up temporary query image
         safe_remove_file(query_img_path)
@@ -249,51 +302,49 @@ def enroll():
     
     try:
         setup_gallery()
-        
+
         data = request.json or {}
-        
+
         if 'image' not in data:
             return jsonify({'error': 'Missing image in request'}), 400
-        
+
         # Generate new template ID
         template_id = str(uuid.uuid4())
-        
+
         # Decode image to temporary file
         temp_img_path = decode_base64_image(data['image'])
         if temp_img_path is None:
             return jsonify({'error': 'Failed to decode image'}), 400
-        
+
         # Verify face can be detected
         try:
             # Try to extract face representation to validate the image
-            DeepFace.represent(
+            deepface_handler.represent(
                 img_path=temp_img_path,
-                model_name=MODEL_NAME,
-                detector_backend=DETECTOR_BACKEND,
                 enforce_detection=True
             )
         except Exception as e:
             return jsonify({'error': f'No face detected in image: {str(e)}'}), 400
-        
+
         # Save to gallery
         gallery_img_path = os.path.join(gallery_dir, f"{template_id}.jpg")
         shutil.copy2(temp_img_path, gallery_img_path)
-        
+
         # Add to tracking lists
         known_face_ids.append(template_id)
         known_face_paths.append(gallery_img_path)
-        
+
         processing_time = int((time.time() - start_time) * 1000)
-        
+
         return jsonify({
             'template_id': template_id,
             'processing_time_ms': processing_time
         })
-        
+
     except Exception as e:
         print(f"ERROR in enroll: {str(e)}")
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
-    
+
     finally:
         # Clean up temporary file
         safe_remove_file(temp_img_path)
@@ -329,56 +380,46 @@ def pad():
     
     try:
         data = request.json or {}
-        
+
         if 'image' not in data:
             return jsonify({'error': 'Missing image in request'}), 400
-        
+
         # Decode image
         img_path = decode_base64_image(data['image'])
         if img_path is None:
             return jsonify({'error': 'Failed to decode image'}), 400
-        
-        # Basic liveness check - this is a simplified implementation
+
+        # Liveness check using DeepFace anti_spoofing
         try:
-            # Try to detect face first
-            result = DeepFace.extract_faces(
+            # Try to detect face(s) with anti_spoofing
+            face_objs = deepface_handler.extract_faces(
                 img_path=img_path,
-                detector_backend=DETECTOR_BACKEND,
-                enforce_detection=True
+                enforce_detection=True,
+                anti_spoofing=True
             )
-            
-            if len(result) == 0:
+            if not isinstance(face_objs, list) or len(face_objs) == 0:
                 return jsonify({'error': 'No face detected in image'}), 400
-            
-            # Simple heuristic: check image quality metrics
-            img = cv2.imread(img_path)
-            if img is None:
-                return jsonify({'error': 'Failed to load image'}), 400
-            
-            # Calculate basic quality metrics
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
-            
-            # Basic threshold for blur detection (not a real PAD)
-            is_live = laplacian_var > 100  # Adjust threshold as needed
-            confidence = min(1.0, laplacian_var / 500.0)  # Normalize to 0-1
-            
+            # Check if all detected faces are real
+            all_real = all(face_obj.get("is_real", False) for face_obj in face_objs)
+            # Confidence: average of all faces' "confidence" field if present, else 1.0 if all real else 0.0
+            confidences = [face_obj.get("confidence", 1.0) for face_obj in face_objs]
+            confidence = float(np.mean(confidences)) if confidences else (1.0 if all_real else 0.0)
+
             processing_time = int((time.time() - start_time) * 1000)
-            
+
             return jsonify({
-                'is_live': bool(is_live),
+                'is_live': bool(all_real),
                 'confidence': float(confidence),
                 'processing_time_ms': processing_time,
-                'reason': 'This is a basic implementation. For production use, consider specialized PAD models.'
+                'reason': 'DeepFace anti_spoofing result. For production use, consider specialized PAD models.'
             })
-            
         except Exception as e:
             return jsonify({'error': f'PAD processing failed: {str(e)}'}), 400
-        
+
     except Exception as e:
         print(f"ERROR in pad: {str(e)}")
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
-    
+
     finally:
         safe_remove_file(img_path)
 
@@ -388,18 +429,18 @@ def info():
         # Get DeepFace version
         import deepface
         version = getattr(deepface, '__version__', 'unknown')
-        
+
         return jsonify({
             'company': 'DeepFace by serengil',
             'version': version,
             'product_name': 'DeepFace',
             'description': 'A lightweight face recognition and facial attribute analysis framework',
-            'model': MODEL_NAME,
-            'detector_backend': DETECTOR_BACKEND,
-            'distance_metric': DISTANCE_METRIC,
+            'model': deepface_handler.model_name,
+            'detector_backend': deepface_handler.detector_backend,
+            'distance_metric': deepface_handler.distance_metric,
             'thresholds': {
-                'verification': get_deepface_threshold(),
-                'identification': get_deepface_threshold()
+                'verification': deepface_handler.get_deepface_threshold(),
+                'identification': deepface_handler.get_deepface_threshold()
             },
             'gallery_size': len(known_face_ids),
             'end_points': {
@@ -443,9 +484,9 @@ def quit_server():
 if __name__ == '__main__':
     try:
         setup_gallery()
-        print(f"Starting DeepFace server with model: {MODEL_NAME}")
-        print(f"Detector backend: {DETECTOR_BACKEND}")
-        print(f"Distance metric: {DISTANCE_METRIC}")
+        print(f"Starting DeepFace server with model: {deepface_handler.model_name}")
+        print(f"Detector backend: {deepface_handler.detector_backend}")
+        print(f"Distance metric: {deepface_handler.distance_metric}")
         app.run(host='0.0.0.0', port=5001, debug=True)
     except KeyboardInterrupt:
         print("\nShutting down...")
