@@ -15,7 +15,7 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 > [!IMPORTANT]
 > * The implementation provided is in Python, however any language can be used where the REST endpoints can exposed.
 > * API authentication can be support through x-API-Key set in the header
-> * Note this currently only designed be run completely inside a secure trusted testing network, and so there is currently no encryption on REST calls - although this SSL is easily supported.
+> * Note this currently only designed be run completely inside a secure trusted testing network, and so there is currently no encryption on REST calls - although SSL is easily supported.
 
 ---
 
