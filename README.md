@@ -21,7 +21,7 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 
 ## Requirements
 
-- Python 10+
+- Python >= 3.8, <= 3.10
 - pip
 - supply your own biometric image (default `testdata/face1.png`)
 
