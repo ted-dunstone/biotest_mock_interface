@@ -33,13 +33,13 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 # Core dependencies
 pip install flask
 
-# Dependencies for optional Swagger UI (interactive docs)
-pip install flasgger
-
 # Dependencies for Mock client for integration tests
 pip install requests
 
-# Dependencies for Face Recognition server (in 'servers' directory)
+# Optional dependencies for Swagger UI (interactive docs)
+pip install flasgger
+
+# Optional dependencies if running servers/py_facerec.py (mock face recognition server)
 pip install face_recognition numpy Pillow
 ```
 
