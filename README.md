@@ -21,6 +21,7 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 
 ## Requirements
 
+- cmake
 - Python >= 3.8, <= 3.10
 - pip
 - supply your own biometric image (default `testdata/face1.png`)
@@ -32,13 +33,13 @@ This is a mock biometric API server designed for use in biometric Proof-of-Conce
 # Core dependencies
 pip install flask
 
-# Optional Swagger UI (interactive docs)
+# Dependencies for optional Swagger UI (interactive docs)
 pip install flasgger
 
-# Mock client for integration tests
+# Dependencies for Mock client for integration tests
 pip install requests
 
-# Face Recognition server (in 'servers' directory)
+# Dependencies for Face Recognition server (in 'servers' directory)
 pip install face_recognition numpy Pillow
 ```
 
