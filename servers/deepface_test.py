@@ -439,8 +439,8 @@ def info():
             'detector_backend': deepface_handler.detector_backend,
             'distance_metric': deepface_handler.distance_metric,
             'thresholds': {
-                'verification': deepface_handler.get_deepface_threshold(),
-                'identification': deepface_handler.get_deepface_threshold()
+                'verify': deepface_handler.get_deepface_threshold(),
+                'identify': deepface_handler.get_deepface_threshold()
             },
             'gallery_size': len(known_face_ids),
             'end_points': {
