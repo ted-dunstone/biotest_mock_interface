@@ -357,10 +357,11 @@ In practice this can be used to test the interfaces of your server.
 
 A test runner (`test_servers.py`) is provided to start each Python server in the `servers/` directory and run the integration suite (`mock_client.py`) against it:
 
+***Please note that the test servers (DeepFace and FaceRec) provided with this repo are provided as example servers only, just to show how servers can be integrated, and will not run without additional configuration. The instructions to configure these are not provided here. Please remove both files before running the test_servers script.***
+
 ```bash
 python test_servers.py
 ```
-
 ## Face Recognition Server Example
 
 The `servers/py_facerec.py` script demonstrates an open source face recognition implementation. Below is a minimal snippet illustrating the `/verify`, `/identify`, and `/enroll` endpoints:
