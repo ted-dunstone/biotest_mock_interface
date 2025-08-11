@@ -206,8 +206,8 @@ def info():
         'product_name': ' face_recognition',
         'description': 'A simple API for face recognition operations.',
         'thresholds': {
-            'verification': DEFAULT_TOLERANCE,
-            'identification': DEFAULT_TOLERANCE
+            'verify': DEFAULT_TOLERANCE,
+            'identify': DEFAULT_TOLERANCE
         },
         'gallery_size': len(known_face_encodings),
         'api_key_required': True,
