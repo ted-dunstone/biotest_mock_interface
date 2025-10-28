@@ -161,7 +161,7 @@ Get information about the tested algorithm and discover supported endpoints. Thi
   "product_name": "Mock Biometric Test Server",
   "version": "1.0.0",
   "thresholds": { "identify": 0.5, "verify": 0.75 }, # note this is optional, values supplied here will be assumed as suggested operational points
-  "gallery_size: n # This should be the number of images currently enrolled in the gallery
+  "gallery_size": 0 # This should be the number of images currently enrolled in the gallery
   "description": "A mock biometric API for PoC and testing, no real biometric algorithm used.",
   "api_key_required": false, # specify if an api key is needed - if so it will be sent in the header
   "endpoints": {
